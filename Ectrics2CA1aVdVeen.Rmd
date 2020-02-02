@@ -1,0 +1,231 @@
+---
+title: "Econometrics 2 CA1a"
+author: "Ties van der Veen"
+date: "1-2-2020"
+output: pdf_document
+---
+
+## Rebecca Costello, Ties van der Veen, Matei van der Meer
+
+# I. Preliminaries
+
+```{r}
+#Clearing the workspace
+rm(list = ls())
+```
+
+```{r message=FALSE, warning=FALSE}
+#Installing needed packages
+options(repos="https://cran.rstudio.com")
+install.packages("interflex")
+install.packages("plm")
+install.packages("margins")
+
+#Activating libraries
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(lubridate)
+library(ggplot2)
+library(interflex)
+library(plm)
+library(margins)
+```
+
+```{r}
+#Improving layout
+knit_print.data.frame <- lemon_print
+```
+
+```{r message=FALSE, warning=FALSE}
+#Setting summarytools to R Markdown
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+# II. Treatment heterogeneity in Allcott (2011)
+
+(a)
+
+The boomerang effect mentioned in the paper describes the effect that people who use less energy than the average household and are made aware of this fact might lead increase their energy usage. 
+
+(b)
+
+Conditional cooperation can be described as people changing their contribution depending on their information about others' contributions. Thus, if people are informed that they are below/above average energy usage, they might adapt their own energy consumption. This means that low/high energy users (pre-treatment) react differently, leading to a different outcome for them after the treatment. This is by definition heterogeneity of the treatment effect.
+
+(c)
+
+Allcott looks at the Conditional Average Treatment Effects, or CATEs. These are taken for "households in different percentiles of their experiment's distribution of baseline usage". This shows that the more energy a household used before the treatment, the more it saved after the treatment.
+
+(d)
+
+The energy savings that can be reached by implementing the treatment described in this research are on par with what a price increase of 5.2% could save. This is both more effective than a carbon cap and trade system (2.5% savings in 2020, 20% in 2030), and is less controversial. Overall, implementing this treatment seems like a better alternative.
+
+# III. Introduction to the computer assignment
+
+```{r}
+theUrl_ca1a_ectrics2 <- "https://surfdrive.surf.nl/files/index.php/s/Jh0fYEzZK1JVZAi/download"
+waste <- read.dta (file = theUrl_ca1a_ectrics2)
+```
+
+# IV. Potential outcomes
+
+(a)
+
+Y(0,i) = no change in amount of waste seperated is recorded
+Y(1,i) = a change in amount of waste seperated is recorded
+
+(b)
+
+1. Repercussions for failing to seperate waste could move people to be more careful when disposing of an item.
+2. The second treatment period could show a habit-forming effect. This could happen because of a variety of reasons: people find it easier to seperate waste, are more aware of their impact on the environment, etc.
+
+# V. Descriptive statistics
+
+(a)
+
+```{r}
+waste_sample <- waste[waste$calendar_week==34, ]
+waste_sample %>%
+  summarise(mean = mean(waste_sample$residual_weight, na.rm=TRUE), n = n())
+```
+
+The mean of the main outcome variable, residual weight, is roughly 7.89 in week 34. This was calculated over all routes, as can be seen by the n-value (which indicates the number of routes) being 55. This implies that the average kilos of residual waste per household in this region was about 8 kg.
+
+(b)
+
+```{r}
+min(waste$TimeElapsed, na.rm=TRUE)
+max(waste$TimeElapsed, na.rm=TRUE)
+```
+
+This shows that the lowest amount of weeks between treatments was 7 weeks, and the highest was 35 weeks.
+
+(c)
+
+```{r}
+#Creating mean values by treatment/control and calender week
+
+groupmeans <- waste %>%
+  filter(TimeElapsed>25) %>%
+  group_by(RepTreatment, calendar_week) %>%
+  summarise(residual_weight_mean = mean(residual_weight))
+
+#Telling R that RepTreatment is a factor variable
+
+groupmeans$RepTreatment <- as.factor(groupmeans$RepTreatment)
+
+#Creating the line plot
+
+ggplot(groupmeans, aes(x = calendar_week, y = residual_weight_mean, color=RepTreatment)) +
+  stat_summary(geom = 'line') +
+  theme_minimal()
+```
+
+This graph seems to show overall lower means for garbage for the groups that have had the treatment administered than those who have not. Though this graph is not fully decisive so it seems wrong to draw conclusions this early.
+
+# VI. Reporting and interpreting treatment heterogeneity
+
+(a)
+
+```{r}
+#Estimating ATE while ignoring serial correlation between observations within routes
+
+ate <- lm(residual_weight ~ RepTreatment + factor(route) + factor(calendar_week), data=waste)
+summ(ate)
+```
+
+(1) The coefficient for RepTreatment is estimated at -0.22. This tells us that the treatment caused a lower average waste disposal for subjects that were administered the treatment. 
+(2) Since these values are in kilograms, the reduction is 0.22 or 220 grams. This is a rather small decrease. To see this result in percentages, we divide the estimate by the mean of the outcome variable calculated earlier:
+
+```{r}
+-0.22/7.887636 
+
+```
+In percentages, this is a 0.03% decrease.
+
+```{r}
+#Estimating the ate without ignoring serial correlation
+
+ate1 <- plm(residual_weight ~ RepTreatment, data=waste, effect="twoways",
+            model = "within", index=c("route", "calendar_week"))
+coeftest(ate1, vcov=vcovHC(ate1, cluster="group"))
+```
+
+(b)
+
+```{r}
+#Interaction between treatment variable and the time since last treatment
+
+ate2 <- plm(residual_weight ~ RepTreatment*TimeElapsed, data=waste, effect = "twoways",
+            model="within", index=c("route", "calendar_week"))
+coeftest(ate2, vcov=vcovHC(ate2, cluster="group"))
+```
+
+```{r}
+#Verifying the ate being similar to the ate under (a)
+print(0.31185+(mean(waste$TimeElapsed)*(-0.0238)))
+```
+
+This is similar to the -0.22 ate we found in (a).
+
+(c) 
+
+At the value of 1 (?)
+
+It does not seem logical to report this CATE since it is insignificant and has a very small effect.
+(d)
+
+RepTreatment:TimeElapsed is the value for RepTreatment multiplied by the number of weeks it took for the second round of treatment to begin for that route. This does not seem to be very informative since it is a simple multiplication without any other balances.
+
+The statistical significance of this term is 0.2004, meaning that in 20% of repeated tests we would get different results of this estimator. This is not a generally accepted significance level, but could be sizable enough for policy effects.
+
+(e)
+
+```{r}
+#Reloading the data
+
+theUrl_ca1a_ectrics2 <- "https://surfdrive.surf.nl/files/index.php/s/Jh0fYEzZK1JVZAi/download"
+waste <- read.dta (file = theUrl_ca1a_ectrics2)
+```
+
+```{r}
+#Creating the linear marginal effect plot
+
+out <- inter.binning(Y = "residual_weight", D = "RepTreatment", X = "TimeElapsed",
+                     Z = NULL, FE = c("route", "calendar_week"), data = waste,
+                     vartype = "cluster", cl="route", main=NULL,
+                     wald=TRUE, ylab="conditional average treatment effect")
+out$graph
+```
+
+This plot suggests that the CATE decreases as time elapsed increases. The marginal effects line up because it is forced to take a line-shape by the function.
+
+(f)
+
+The linear approximation seems decent enough, though the bins do show a rather big range which could be an issue.
+
+(g)
+
+No, just correlational.
+
+(h)
+
+The graph tells you taht the CATE is higher for a lower time elapsed, so it would be better to have a short time between the first treatment and the repeated treatment.
+
+
+
+
+
+
+
