@@ -1,0 +1,126 @@
+---
+title: "Econometrics 2 CA2b"
+author: "Ties van der Veen"
+date: "7-2-2020"
+output: pdf_document
+---
+## Rebecca Costello, Matei van der Meer, Ties van der Veen
+
+# I. Preliminaries
+
+**Clearing the workspace**
+```{r message=FALSE, warning=FALSE}
+rm(list = ls())
+```
+**Libraries**
+```{r message=FALSE, warning=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(lubridate)
+library(ggplot2)
+library(interflex)
+library(plm)
+library(margins)
+library(coefplot)
+```
+**Improving layout**
+```{r message=FALSE, warning=FALSE}
+knit_print.data.frame <- lemon_print
+```
+**Summarytools R Markdown**
+```{r message=FALSE, warning=FALSE}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+# II. Introduction to the computer assignment
+
+**Data**
+
+```{r}
+theUrl_ca2b_ectrics2 <- "https://surfdrive.surf.nl/files/index.php/s/sXRMtDDmAaGvGuG/download"
+oil <- read.dta (file = theUrl_ca2b_ectrics2)
+```
+
+# III. What to submit
+
+(a)
+
+```{r}
+print(min(oil$temp))
+print(mean(oil$temp))
+print(max(oil$temp))
+print(min(oil$watertemp))
+print(mean(oil$watertemp))
+print(max(oil$watertemp))
+```
+
+(b)
+
+```{r}
+groupmean <- oil %>%
+  filter(month==12) %>%
+  group_by(month, eventtime)
+
+
+print(mean(groupmean$eventtime))
+#Not sure this is the best way to do it. Same approach would be for July with 
+#7 instead of 12. 
+```
+
+(c)
+
+I assume this is the same as in 2A, though not sure if we have to specify it for this particular model.
+
+(d)
+
+```{r}
+#oil <- pdata.frame(oil, index=c("grid_id"))
+
+#oil_et_reg <- plm(spot ~ eventtime + temp + temp_sq + watertemp + watertemp_sq + wind +
+#wind_sq + factor(year) + factor(month),  data = oil, effect = "twoways",
+#model = "within", effect='individual')
+
+#coeftest(oil_et_reg, vcov=vcovHC(oil_et_reg, cluster="group"))
+
+#Not sure how to leave out eventtime -2. Tried to copy the 2a lines but that did not work.
+
+#Running this I get the error: Error in plm(spot ~ eventtime + temp + temp_sq +
+#watertemp + watertemp_sq +  : 
+#formal argument "effect" matched by multiple actual arguments
+
+```
+
+(e)
+
+```{r echo=TRUE}
+#dataevent <- coefplot(oil_et_reg)
+
+#dataevent <- dataevent$data
+
+#dataevent$Coefficient <- as.character(dataevent$Coefficient)
+#dataevent$Coefficient <- substr(dataevent$Coefficient, 10, 10000)
+#dataevent$Coefficient <- as.numeric(dataevent$Coefficient)
+
+#zero <- data.frame(0,-2,0,0,0,0,"model", stringsAsFactors = FALSE)
+#names(zero) <- names(dataevent)
+#dataevent <- bind_rows(dataevent,zero)
+
+#coefplot(dataevent, horizontal = TRUE)
+
+#This doesn't run because I can't do the regression, but the overall answer should 
+#be something close to this.
+```
+
+
