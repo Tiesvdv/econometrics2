@@ -1,0 +1,180 @@
+---
+title: "Econometrics 2 CA2a"
+author: "Ties van der Veen"
+date: "7-2-2020"
+output: pdf_document
+---
+
+## Rebecca Costello, Matei van der Meer, Ties van der Veen
+
+# I. Preliminaries
+
+**Clearing workspace**
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+rm(list = ls())
+```
+
+**Packages**
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+options(repos="https://cran.rstudio.com")
+install.packages("coefplot")
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(lubridate)
+library(ggplot2)
+library(interflex)
+library(plm)
+library(margins)
+library(coefplot)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+# II. Time-varying treaetment effects in Allcott & Rogers (2014)
+
+(a) The reports that are given to people as a way of treatment act as a cue that stimulates people to revise their energy spending. As Allcott & Rogers put it, this increases the marginal utility of energy conservation. Hence, people are relatively rewarded more for conserving energy and will thus save more.
+
+(b) The behavioral response mechanism as discussed in (a) wears off after a certain amount of time. With every report people receive, they get more used to its information. This learning effect wittles down the change in marginal utility they got from the first few reports, and makes them return to the situation that existed before receiving any reports.
+
+(c) The paper adds to the body of knowledge pertaining to this treatment method by answering two further questions: 1. How persistent are the effects after the treatment ends? And 2. What is the incremental effect of continued treatment? The discussed outcomes of these questions are relevant to shaping policy around the treatment.
+
+# III. Introduction to the computer assignment
+
+**Data**
+
+```{r}
+theUrl_ca2a_ectrics2 <- "https://surfdrive.surf.nl/files/index.php/s/ZphgKxImtwFawv9/download"
+waste2a <- read.dta (file = theUrl_ca2a_ectrics2)
+```
+
+# IV. Graphical evidence of a treatment effect
+
+(a) Y_it + $\beta$_0 + $\Sigma$^T _ $\tau$ -T*$\alpha$_$\tau$ W_$\tau$ + $\lambda$_i + $\mu$_t + e_it
+    Not sure how to do the sigma correctly in markdown
+
+(b) 
+
+```{r}
+waste2a <- waste2a %>%
+  group_by(route) %>%
+  mutate(weekstart=ifelse(treatment==1, calendar_week, Inf),
+         weekstart2=min(weekstart),
+         eventtime=calendar_week-weekstart2+1) %>%
+  select(-weekstart,-weekstart2) %>%
+  ungroup()
+```
+
+(c)
+
+```{r}
+ggplot(waste2a, aes(x=eventtime))+
+  geom_bar(stat="count")+
+  labs(x='event time', y='count', title='Time since start of treatment')
+```
+
+```{r}
+waste2a <- waste2a %>%
+  mutate(eventtime2 = ifelse(eventtime<=-37,-37,
+                             ifelse(eventtime>=28,28,eventtime)))
+```
+
+```{r}
+waste2a <- pdata.frame(waste2a, index=c("route", "calendar_week"))
+
+waste2a$eventtime <- as.factor(waste2a$eventtime2)
+waste2a$eventtime <- relevel(waste2a$eventtime, "0")
+
+et_reg <- plm(residual_weight ~ eventtime, data=waste2a, effect = "twoways",
+              model = "within")
+
+coeftest(et_reg, vcov=vcovHC(et_reg, cluster="group"))
+```
+
+```{r}
+dataevent <- coefplot(et_reg)
+
+dataevent <- dataevent$data
+
+dataevent$Coefficient <- as.character(dataevent$Coefficient)
+dataevent$Coefficient <- substr(dataevent$Coefficient, 10, 10000)
+dataevent$Coefficient <- as.numeric(dataevent$Coefficient)
+
+zero <- data.frame(0,0,0,0,0,0,"model", stringsAsFactors = FALSE)
+names(zero) <- names(dataevent)
+dataevent <- bind_rows(dataevent,zero)
+
+coefplot(dataevent, horizontal = TRUE)
+```
+
+# V. Modeling time variation in the treatment effect
+
+(a)
+
+```{r}
+ate <- plm(residual_weight ~ treatment, data = waste2a, effect = "twoways",
+model = "within", index=c("route", "calendar_week"))
+coeftest(ate, vcov=vcovHC(ate, cluster="group"))
+```
+
+Since we ignore time variation in the treatment effects, we only see the treatment effect of a specific moment. Thus, overall, we would be likely to overestimate the treatment effect (since we now it decreases over time).
+
+(b)
+
+
+```{r}
+ate2 <- plm(residual_weight ~ treatment + linear_decay, data = waste2a, effect = "twoways",
+model = "within", index=c("route", "calendar_week"))
+coeftest(ate2, vcov=vcovHC(ate2, cluster="group"))
+```
+
+The treatment effect would disappear in 
+```{r}
+(0.991581/0.011657)
+```
+
+weeks. The graphical evidence presented earlier would have it disappear faster, as it is already rather close to 0 within 30 weeks.
+
+(c)
+
+```{r}
+ate3 <- plm(residual_weight ~ LetterReceived + TreatmentOngoing + TreatmentCompleted, data = waste2a, effect = "twoways",
+model = "within", index=c("route", "calendar_week"))
+coeftest(ate3, vcov=vcovHC(ate3, cluster="group"))
+```
+
+```{r}
+# linearHypothesis(stages, "TreatmentOngoing = TreatmentCompleted") This doesn't run, error says 'stages' is not found. Am I missing something somewhere?
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
