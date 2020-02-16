@@ -1,0 +1,114 @@
+---
+title: "CA3VdVeen"
+author: "Ties van der Veen"
+date: "15-2-2020"
+output: pdf_document
+---
+
+## Rebecca Costello, Ties van der Veen, Matei van der Meer
+
+
+# The first article
+
+(a)
+
+```{r}
+library(dagitty)
+library(ggdag)
+```
+
+```{r}
+ca3 <- dagitty('dag{
+inc [pos="0,2"]
+ine [pos="1,3"]
+ipr [pos="1,1"]
+rofs [pos="1,0"]
+chh [pos="2,2"]
+
+
+inc -> ipr -> chh
+inc -> rofs -> chh
+inc -> chh
+
+}')
+
+ggdag(ca3)
+```
+
+Where inc = houshold income (independent variable)
+      
+      ipr = improvements parental relationship (mediating effect)
+      chh = child health (dependent variable)
+      rofs = reduction of financial strife (mediating effect)
+      ine = initial endowments (moderating effect on the main relationship, not sure how to draw the line)
+
+(b)
+
+They show with their data that parental behaviors and parental mental health outcomes can change the child's relationship with the parent, positively affecting their health. 
+
+
+(c)
+
+They show with regression data and panels that the mediator is descriptive for the sample that they have. These outcomes are robust with a 90% confidence interval. In the case of parental mental health, their outcomes are comparable to another study, further reinforcing the support.
+
+(d)
+
+A confounder could be spending behaviour for the reduction of financial strife mediator. A less than normal spending pattern (due to a factor like gambling addiction) could make this mediator ineffective.
+
+# The second article
+
+(a)
+
+```{r}
+ca3.1 <- dagitty('dag{
+prom [pos="0,2"]
+type [pos="1,3"]
+temp [pos="1,1"]
+earn [pos="1,0"]
+divo [pos="2,2"]
+career [pos="1,4"]
+
+prom -> temp -> divo
+prom -> earn -> divo
+prom -> divo
+
+}')
+
+ggdag(ca3.1)
+```
+
+Where prom = promotion to top job (independent variable)
+      divo = probability of divorce (dependent variable)
+      type = type of couple (traditional/equal) (moderating variable)
+      temp = temptation effect (mediating variable)
+      earn = increase in earnings (mediating variable)
+      career = career success (moderating variable)
+
+(b)
+
+For the temptation effect, the authors measure "the proportion and number of opposite-sex coworkers in the
+politician’s previous workplace". They manipulate this data to study the temptation effect, and find no conclusive evidence for this. 
+
+For the increased earnings, the authors look at the increase in earnings when compared to the median of promoted politicians of the same sex. Then, they classify these as ''lower'' or ''higher'' than the median, and analyze from there (again without finding an effect).
+
+(c)
+
+They divide the data they have into the required samples needed to analyze the mechanisms they mention properly. They then compare these groups to each other, and to the baseline they have already shown. It is then made visible that these mechanisms tend to not show a significant difference from the base effect.
+
+(d)
+
+For the temptation effect, the authors research this because a previous study reasons that "if women’s divorces are motivated by exposure to new
+potential partners, they should be concentrated among women who were the least exposed to opposite-sex coworkers prior to their promotion".
+
+For the type of marriage (traditional/gender-equal), they follow the idea that "marriages may be destabilized if job promotions
+move the division of paid (or unpaid) labor away from the spouses’ expectations of those divisions". They also build this further on the cost-benefit calculation of spouses to stay together (which changes for both of them).
+
+Lastly, for the increase in earnings they build on the idea that economic independence allows a woman to get a divorce, and research that shows that marriage outcomes are more sensitive to the woman's economic outcome than the man's. 
+
+
+
+
+
+
+
+
