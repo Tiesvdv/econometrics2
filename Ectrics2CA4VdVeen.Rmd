@@ -1,0 +1,164 @@
+---
+title: "CA4VdVeen"
+author: "Ties van der Veen"
+date: "1-3-2020"
+output: pdf_document
+---
+
+## Rebecca Costello, Ties van der Veen, Matei van der Meer
+
+# I. Preliminaries
+
+
+```{r message=FALSE, warning=FALSE}
+#Clearing the workspace
+rm(list = ls())
+```
+
+```{r message=FALSE, warning=FALSE}
+options(repos="https://cran.rstudio.com")
+install.packages("pwr")
+```
+
+```{r message=FALSE, warning=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(lubridate)
+library(ggplot2)
+library(plm)
+library(pwr)
+```
+
+# II. What to submit
+
+```{r}
+theUrl_ca4_ectrics2 <- "https://surfdrive.surf.nl/files/index.php/s/uWdWgE18hCYE4LS/download"
+experiment <- read.dta (file = theUrl_ca4_ectrics2)
+```
+
+
+(a)
+
+```{r}
+reg1 <- plm(violations ~ treatment_dummy_2, data=experiment, effect="twoways",
+            model = "within", index=c("month"))
+coeftest(reg1, vcov=vcovHC(reg1, cluster="group"))
+
+#Not 100% confident this is the right way to test this, would like input on that.
+```
+
+
+(b)
+
+My results suggest a 1.23 point decrease in violiations after the treatment period. Nonetheless, a difference in the outcome ranging from a 0.1007 point decrease to a 2.3659 point decrease is also reasonably compatible with our data, given our assumptions.
+
+
+(c)
+
+Treatment effect = -1.2333
+
+Standard deviation is the standard error times square root of n
+
+```{r}
+
+SD = 1.1326*sqrt(42)
+print(SD)
+```
+
+So the effect size is 
+
+```{r}
+-1.2333/SD
+```
+
+
+Chance treatment works = 0.25
+Significance level = 0.05
+
+```{r}
+pwr.t.test(n=42,d=-0.1680225,sig.level=0.05,power = NULL,
+           type = c("two.sample"),alternative="two.sided") 
+```
+
+So the power is rather low, 0.1185235.
+
+What we want to know: P(treatment doesn't work|test-) = P(test-|doesn't work) * P(doesn't work) / P(test-) = Power * P(doesn't work) / P(test-)
+= Power * P(doesn't work) / (Power * P(doesn't work) + P(test-|works)*P(works))
+
+```{r}
+power = 0.1185235
+
+print(power*0.75 / ((power * 0.75) + (0.05 * 0.25)))
+```
+
+So the chance the that treatment doesn't work when the test is negative is 0.8767, or 88%. Seems rather high, not sure I got the formula correct. I tried to translate it from the slide "Strength of evidence of a statistically significant finding from a well-powered study".
+
+(d)
+
+First we calculate the effect size:
+
+```{r}
+SD2 = 1.2*sqrt(42)
+print(1.2/SD2)
+```
+
+Running the power test again:
+
+```{r}
+pwr.t.test(n=42,d=0.1543033,sig.level=NULL,power = 0.4,
+           type = c("two.sample"),alternative="two.sided") 
+```
+
+The significance level she must have found is very close to the one we found under (a), namely 0.2898. So her finding seems to be consistent with ours.
+
+(e)
+
+1-(answer found for c) = 1-0.8767169
+
+```{r}
+newprior = 1-0.8767169
+print(newprior)
+```
+
+P(works) is 0.25 as given earlier.
+
+As from the slide "Strength of evidence of a statistically significant finding from a well-powered study", we have
+
+Power * P(works) / (Power * P(works) + P(test+|doesn't work)*P(doesn't work))
+
+```{r}
+print(power*0.25/(power*0.25 + 0.05*0.75))
+```
+
+So now there's a 44% chance that the treatment works if there is a positive test. Not sure what the new test under (d) has to do with this?
+
+(f)
+
+With a bias of 0.2, 20% of the negative tests goes into the positive test category (increasing false positives and reducing true negatives). Not sure how to calculate this?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
